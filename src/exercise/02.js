@@ -62,7 +62,7 @@ function App() {
 
   // 🐨 wrap getItems in a call to `React.useMemo`
   // const allItems = React.useMemo(() => getItems(inputValue), [inputValue])
-  const {data: allItems, status, run} = useAsync({data: [], status: 'pending'})
+  const {data: allItems, run} = useAsync({data: [], status: 'pending'})
   React.useEffect(() => {
     run(getItems(inputValue))
   }, [inputValue, run])
