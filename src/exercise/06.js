@@ -12,6 +12,7 @@ import {
 
 const AppStateContext = React.createContext()
 const AppDispatchContext = React.createContext()
+const DogStateContext = React.createContext()
 
 const initialGrid = Array.from({length: 100}, () =>
   Array.from({length: 100}, () => Math.random() * 100),
@@ -60,6 +61,37 @@ function useAppDispatch() {
   return context
 }
 
+function dogReducer(state, action) {
+  switch (action.type) {
+    case 'UPDATE_DOG_NAME': {
+      return {...state, name: action.name}
+    }
+    default: {
+      throw new Error(`Unhandled action type: ${action.type}`)
+    }
+  }
+}
+
+function DogProvider({children}) {
+  const [state, dispatch] = React.useReducer(dogReducer, {
+    name: '',
+  })
+  const value = [state, dispatch]
+  return (
+    <DogStateContext.Provider value={value}>
+      {children}
+    </DogStateContext.Provider>
+  )
+}
+
+function useDogState() {
+  const context = React.useContext(DogStateContext)
+  if (!context) {
+    throw new Error('useDogState must be used within the DogProvider')
+  }
+  return context
+}
+
 function Grid() {
   const dispatch = useAppDispatch()
   const [rows, setRows] = useDebouncedState(50)
@@ -99,25 +131,26 @@ function Cell({row, column}) {
 Cell = React.memo(Cell)
 
 function DogNameInput() {
-  const [dogName, setDogName] = React.useState('')
+  const [state, dispatch] = useDogState()
 
   function handleChange(event) {
     const newDogName = event.target.value
-    setDogName(newDogName)
+    dispatch({type: 'UPDATE_DOG_NAME', name: newDogName})
   }
 
   return (
     <form onSubmit={e => e.preventDefault()}>
       <label htmlFor="dogName">Dog Name</label>
       <input
-        value={dogName}
+        value={state.name}
         onChange={handleChange}
         id="dogName"
         placeholder="Toto"
       />
-      {dogName ? (
+      {state.name ? (
         <div>
-          <strong>{dogName}</strong>, I've a feeling we're not in Kansas anymore
+          <strong>{state.name}</strong>, I've a feeling we're not in Kansas
+          anymore
         </div>
       ) : null}
     </form>
@@ -128,12 +161,14 @@ function App() {
   return (
     <div className="grid-app">
       <button onClick={forceRerender}>force rerender</button>
-      <AppProvider>
-        <div>
+      <div>
+        <DogProvider>
           <DogNameInput />
+        </DogProvider>
+        <AppProvider>
           <Grid />
-        </div>
-      </AppProvider>
+        </AppProvider>
+      </div>
     </div>
   )
 }
